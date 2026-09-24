@@ -1,0 +1,8 @@
+{
+  "name": "3D Specimen Degree Certificate Viewer",
+  "description": "Interactive 3D rotatable specimen degree certificate presentation for Master of Computer Applications (Specimen / Model Only).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

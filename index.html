@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>3D Specimen Degree Certificate Viewer</title>
+  <meta name="description" content="Interactive 3D rotatable specimen degree certificate presentation for Master of Computer Applications (Specimen / Model Only)." />
+  <meta property="og:title" content="3D Specimen Degree Certificate Viewer" />
+  <meta property="og:description" content="Interactive 3D rotatable specimen degree certificate presentation for Master of Computer Applications (Specimen / Model Only)." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Google Fonts for High-Grade Academic Typography with Safe Fallbacks -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-deep: #0a0d14;
+      --bg-surface: #111622;
+      --bg-card: rgba(18, 24, 38, 0.85);
+      --gold-dark: #815e1f;
+      --gold-mid: #b88f3a;
+      --gold-light: #e5c378;
+      --gold-bright: #fff2c4;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --parchment-base: #fbf8ef;
+      --parchment-border: #bb9549;
+      --parchment-inner: #9d7731;
+      --parchment-dark: #2a2012;
+      --accent-specimen: #b91c1c;
+      --glow-gold: rgba(212, 175, 55, 0.25);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse at 50% 15%, rgba(45, 62, 100, 0.28) 0%, transparent 65%),
+        radial-gradient(circle at 50% 50%, rgba(20, 28, 45, 0.9) 0%, #07090e 100%);
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Skip link for accessibility */
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 1rem;
+      background: var(--gold-mid);
+      color: #000;
+      padding: 8px 16px;
+      font-weight: 600;
+      z-index: 1000;
+      transition: top 0.2s ease;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ==================================================
+       HEADER
+    ================================================== */
+    header {
+      text-align: center;
+      margin-bottom: 1.25rem;
+      width: 100%;
+      max-width: 860px;
+    }
+
+    .badge-warning {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(185, 28, 28, 0.12);
+      border: 1px solid rgba(220, 38, 38, 0.35);
+      color: #fca5a5;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.9rem;
+      border-radius: 9999px;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 0 15px rgba(220, 38, 38, 0.15);
+    }
+
+    .badge-warning .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+      animation: pulse-dot 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 0.5; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .app-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.4rem, 3.2vw, 2.3rem);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #f8fafc;
+      margin-bottom: 0.25rem;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      background: linear-gradient(180deg, #ffffff 30%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-subtitle {
+      font-size: clamp(0.85rem, 1.8vw, 0.98rem);
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+      font-weight: 400;
+    }
+
+    /* ==================================================
+       3D VIEWER CONTAINER & SCENE
+    ================================================== */
+    .viewer-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 0.5rem 0 1rem 0;
+      perspective: 1600px;
+      -webkit-perspective: 1600px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .interaction-surface {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      touch-action: none; /* Prevents scroll interference on mobile drag */
+      padding: 1.5rem 0.5rem;
+    }
+
+    .interaction-surface:active {
+      cursor: grabbing;
+    }
+
+    /* Dynamic responsive scaler wrapper */
+    .responsive-scaler {
+      position: relative;
+      width: 820px;
+      height: 560px;
+      transform-origin: center center;
+      transition: transform 0.1s ease-out;
+    }
+
+    .scene-3d {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* The rotatable card container */
+    #certificate3d {
+      width: 800px;
+      height: 550px;
+      position: relative;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      transition: transform 0.05s linear;
+      will-change: transform;
+    }
+
+    /* Ambient float animation on load */
+    .ambient-floating {
+      animation: floatBreath 7s ease-in-out infinite;
+    }
+
+    @keyframes floatBreath {
+      0%, 100% {
+        transform: translateY(0px) rotateX(0deg);
+      }
+      50% {
+        transform: translateY(-8px) rotateX(1.5deg);
+      }
+    }
+
+    /* Floor Reflection / Shadow */
+    .floor-shadow {
+      position: absolute;
+      bottom: -45px;
+      left: 50%;
+      width: 740px;
+      height: 160px;
+      transform: translateX(-50%) rotateX(82deg);
+      background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.35) 45%, transparent 72%);
+      border-radius: 50%;
+      filter: blur(24px);
+      pointer-events: none;
+      z-index: -1;
+      transform-origin: center center;
+      transition: opacity 0.2s ease;
+    }
+
+    /* ==================================================
+       CERTIFICATE FACES (FRONT & BACK)
+    ================================================== */
+    .certificate-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      border-radius: 6px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      box-shadow:
+        0 15px 35px -5px rgba(0, 0, 0, 0.65),
+        0 2px 10px rgba(0, 0, 0, 0.4),
+        inset 0 0 45px rgba(184, 143, 58, 0.08);
+      overflow: hidden;
+    }
+
+    /* Parchment Background Texture & Layers */
+    .face-parchment {
+      background-color: var(--parchment-base);
+      background-image:
+        radial-gradient(circle at 50% 40%, #fffef8 0%, #f7f2e1 60%, #eee3c4 100%),
+        repeating-radial-gradient(circle at 50% 50%, rgba(184, 143, 58, 0.02) 0, rgba(184, 143, 58, 0.02) 2px, transparent 2px, transparent 10px);
+      color: var(--parchment-dark);
+    }
+
+    /* Front Face Placement */
+    .cert-front {
+      transform: translateZ(3px);
+    }
+
+    /* Back Face Placement */
+    .cert-back {
+      transform: rotateY(180deg) translateZ(3px);
+    }
+
+    /* 3D Paper Thickness Edges */
+    .edge {
+      position: absolute;
+      background: #dfd4b7;
+      pointer-events: none;
+    }
+    .edge-top {
+      width: 100%;
+      height: 6px;
+      top: -3px;
+      left: 0;
+      transform: rotateX(90deg);
+      background: linear-gradient(90deg, #cfc3a1, #f0e6ce, #cfc3a1);
+    }
+    .edge-bottom {
+      width: 100%;
+      height: 6px;
+      bottom: -3px;
+      left: 0;
+      transform: rotateX(-90deg);
+      background: linear-gradient(90deg, #bfae8c, #ded0af, #bfae8c);
+    }
+    .edge-left {
+      width: 6px;
+      height: 100%;
+      top: 0;
+      left: -3px;
+      transform: rotateY(-90deg);
+      background: linear-gradient(180deg, #c7b897, #e4d7b9, #c7b897);
+    }
+    .edge-right {
+      width: 6px;
+      height: 100%;
+      top: 0;
+      right: -3px;
+      transform: rotateY(90deg);
+      background: linear-gradient(180deg, #c7b897, #e4d7b9, #c7b897);
+    }
+
+    /* ==================================================
+       DECORATIVE BORDERS & CORNERS
+    ================================================== */
+    .cert-border-outer {
+      position: absolute;
+      top: 14px;
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      border: 2px solid var(--parchment-border);
+      pointer-events: none;
+    }
+
+    .cert-border-inner {
+      position: absolute;
+      top: 20px;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      border: 1px solid rgba(157, 119, 49, 0.4);
+      outline: 2px solid var(--parchment-inner);
+      outline-offset: -5px;
+      pointer-events: none;
+    }
+
+    /* Pure CSS Corner Flourishes */
+    .corner-ornament {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-color: var(--gold-mid);
+      pointer-events: none;
+    }
+    .corner-ornament::before, .corner-ornament::after {
+      content: '';
+      position: absolute;
+      background: var(--gold-mid);
+    }
+    .corner-tl {
+      top: 18px;
+      left: 18px;
+      border-top: 3px solid var(--gold-mid);
+      border-left: 3px solid var(--gold-mid);
+    }
+    .corner-tl::before {
+      top: 4px;
+      left: 4px;
+      width: 28px;
+      height: 2px;
+    }
+    .corner-tl::after {
+      top: 4px;
+      left: 4px;
+      width: 2px;
+      height: 28px;
+    }
+    .corner-tr {
+      top: 18px;
+      right: 18px;
+      border-top: 3px solid var(--gold-mid);
+      border-right: 3px solid var(--gold-mid);
+    }
+    .corner-tr::before {
+      top: 4px;
+      right: 4px;
+      width: 28px;
+      height: 2px;
+    }
+    .corner-tr::after {
+      top: 4px;
+      right: 4px;
+      width: 2px;
+      height: 28px;
+    }
+    .corner-bl {
+      bottom: 18px;
+      left: 18px;
+      border-bottom: 3px solid var(--gold-mid);
+      border-left: 3px solid var(--gold-mid);
+    }
+    .corner-bl::before {
+      bottom: 4px;
+      left: 4px;
+      width: 28px;
+      height: 2px;
+    }
+    .corner-bl::after {
+      bottom: 4px;
+      left: 4px;
+      width: 2px;
+      height: 28px;
+    }
+    .corner-br {
+      bottom: 18px;
+      right: 18px;
+      border-bottom: 3px solid var(--gold-mid);
+      border-right: 3px solid var(--gold-mid);
+    }
+    .corner-br::before {
+      bottom: 4px;
+      right: 4px;
+      width: 28px;
+      height: 2px;
+    }
+    .corner-br::after {
+      bottom: 4px;
+      right: 4px;
+      width: 2px;
+      height: 28px;
+    }
+
+    /* Small decorative gold diamonds in corners */
+    .corner-diamond {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+      transform: rotate(45deg);
+    }
+    .corner-tl .corner-diamond { top: 9px; left: 9px; }
+    .corner-tr .corner-diamond { top: 9px; right: 9px; }
+    .corner-bl .corner-diamond { bottom: 9px; left: 9px; }
+    .corner-br .corner-diamond { bottom: 9px; right: 9px; }
+
+    /* ==================================================
+       CERTIFICATE CONTENT (FRONT)
+    ================================================== */
+    .cert-body {
+      position: relative;
+      height: 100%;
+      padding: 26px 42px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-align: center;
+      z-index: 5;
+    }
+
+    .top-disclaimer {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.28em;
+      color: var(--accent-specimen);
+      text-transform: uppercase;
+      padding: 2px 0;
+      border-bottom: 1px dashed rgba(185, 28, 28, 0.4);
+      margin-bottom: 4px;
+    }
+
+    .univ-header {
+      margin-bottom: 6px;
+    }
+
+    .univ-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.28rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #1a1610;
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+
+    .univ-location {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 0.96rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: #55442e;
+      margin-top: 1px;
+    }
+
+    /* Central Emblem */
+    .emblem-wrapper {
+      margin: 2px auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .specimen-emblem {
+      width: 58px;
+      height: 58px;
+    }
+
+    /* Document Title */
+    .cert-heading {
+      font-family: 'Cinzel', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: #79571b;
+      text-transform: uppercase;
+      position: relative;
+      display: inline-block;
+      margin: 0 auto;
+    }
+
+    .cert-heading::before, .cert-heading::after {
+      content: '❖';
+      font-size: 0.65rem;
+      color: var(--gold-mid);
+      vertical-align: middle;
+      margin: 0 10px;
+    }
+
+    .degree-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.18rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #1e1912;
+      margin-top: 2px;
+    }
+
+    .degree-abbrev {
+      font-family: 'Cinzel', serif;
+      font-size: 0.98rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #644a1d;
+      margin-top: -2px;
+    }
+
+    /* Main Certificate Flow */
+    .cert-statement {
+      margin: 2px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .text-certify {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-style: italic;
+      font-size: 1.05rem;
+      color: #4b3f2f;
+    }
+
+    .candidate-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: #0f0d0a;
+      text-transform: uppercase;
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(184, 143, 58, 0.45);
+      display: inline-block;
+      margin: 0 auto;
+      min-width: 320px;
+    }
+
+    .reg-line {
+      font-family: 'Cinzel', serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #3b3123;
+    }
+
+    .text-passage {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 0.98rem;
+      color: #3c3224;
+      line-height: 1.35;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .highlight-exam {
+      font-family: 'Cinzel', serif;
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: #1a1610;
+      display: block;
+      margin: 2px 0;
+    }
+
+    .highlight-qualification {
+      font-family: 'Cinzel', serif;
+      font-size: 0.96rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #1a1610;
+    }
+
+    .result-class {
+      font-family: 'Cinzel', serif;
+      font-size: 1.08rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      color: #835c1c;
+      text-transform: uppercase;
+      margin: 1px 0 3px 0;
+    }
+
+    /* Footer Row */
+    .cert-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-top: 4px;
+      border-top: 1px solid rgba(184, 143, 58, 0.35);
+      text-align: left;
+    }
+
+    .footer-col-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #3f3322;
+    }
+
+    .footer-col-center {
+      text-align: center;
+      max-width: 320px;
+    }
+
+    .banner-not-official {
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      color: var(--accent-specimen);
+      background: rgba(185, 28, 28, 0.08);
+      border: 1px dashed rgba(185, 28, 28, 0.35);
+      padding: 3px 8px;
+      text-transform: uppercase;
+      border-radius: 2px;
+    }
+
+    .footer-col-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sign-placeholder {
+      font-family: 'Plus Jakarta Sans', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #78654a;
+      border-bottom: 1px dashed #aa9574;
+      padding-bottom: 2px;
+      margin-bottom: 2px;
+    }
+
+    .sign-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #262016;
+      line-height: 1.2;
+    }
+
+    .sign-label {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: #78654a;
+    }
+
+    /* ==================================================
+       BACK FACE STYLING
+    ================================================== */
+    .cert-back .cert-body {
+      padding: 30px 48px;
+      justify-content: space-between;
+    }
+
+    /* Faint diagonal watermark pattern across back */
+    .back-watermark-bg {
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 35px,
+        rgba(157, 119, 49, 0.035) 35px,
+        rgba(157, 119, 49, 0.035) 70px
+      );
+      pointer-events: none;
+    }
+
+    .back-heading {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      color: var(--accent-specimen);
+      text-transform: uppercase;
+      border-bottom: 2px solid rgba(185, 28, 28, 0.35);
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+
+    .back-degree-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #1e1912;
+    }
+
+    .back-record-table {
+      width: 100%;
+      max-width: 620px;
+      margin: 8px auto;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .back-record-table tr {
+      border-bottom: 1px solid rgba(184, 143, 58, 0.25);
+    }
+
+    .back-record-table td {
+      padding: 6px 12px;
+      font-size: 0.88rem;
+    }
+
+    .back-record-table td.col-label {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: #644a1d;
+      width: 42%;
+      letter-spacing: 0.05em;
+    }
+
+    .back-record-table td.col-val {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 600;
+      color: #1a1610;
+    }
+
+    /* Warning Box on Back */
+    .back-warning-box {
+      margin: 8px auto;
+      max-width: 640px;
+      border: 2px solid #b91c1c;
+      background: rgba(185, 28, 28, 0.05);
+      padding: 12px 16px;
+      border-radius: 4px;
+    }
+
+    .back-warning-box .warn-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      color: #991b1b;
+      margin-bottom: 4px;
+    }
+
+    .back-warning-box .warn-desc {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #7f1d1d;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
+    }
+
+    .back-security-notice {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: #78654a;
+    }
+
+    /* ==================================================
+       CONTROLS BAR
+    ================================================== */
+    .controls-section {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .control-status-row {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #cbd5e1;
+    }
+
+    .status-tag .indicator-light {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+
+    .status-tag .indicator-light.off {
+      background: #64748b;
+      box-shadow: none;
+    }
+
+    .controls-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 0.5rem 0.75rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-ctrl {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f1f5f9;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.55rem 0.95rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.15s ease-in-out;
+      outline: none;
+    }
+
+    .btn-ctrl:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .btn-ctrl:active {
+      transform: translateY(1px);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-ctrl:focus-visible {
+      box-shadow: 0 0 0 2px var(--gold-light);
+    }
+
+    .btn-ctrl.active-mode {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(184, 143, 58, 0.15));
+      border-color: var(--gold-mid);
+      color: var(--gold-bright);
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+    }
+
+    .toolbar-divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 0 0.2rem;
+    }
+
+    .gesture-hint {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      opacity: 0.85;
+    }
+
+    /* ==================================================
+       DETAILS / INFORMATION PANEL
+    ================================================== */
+    .details-section {
+      width: 100%;
+      max-width: 860px;
+      margin-top: 1.5rem;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .details-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--gold-light);
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.9rem 1.5rem;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .detail-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .detail-val {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .detail-val.status-pill {
+      color: #f87171;
+      font-weight: 700;
+    }
+
+    /* ==================================================
+       ACCESSIBILITY & PREFERS-REDUCED-MOTION
+    ================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      .ambient-floating {
+        animation: none !important;
+      }
+      #certificate3d {
+        transition: none !important;
+      }
+      .badge-warning .dot {
+        animation: none !important;
+      }
+    }
+
+    /* ==================================================
+       RESPONSIVE ADJUSTMENTS
+    ================================================== */
+    @media (max-width: 860px) {
+      main {
+        padding: 0.75rem 0.5rem 2rem 0.5rem;
+      }
+      .controls-toolbar {
+        gap: 0.35rem;
+        padding: 0.45rem;
+      }
+      .btn-ctrl {
+        padding: 0.45rem 0.7rem;
+        font-size: 0.78rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#certificate3d" class="skip-link">Skip to 3D Certificate Viewer</a>
+
+  <main>
+    <!-- Page Header -->
+    <header>
+      <div class="badge-warning" role="alert">
+        <span class="dot" aria-hidden="true"></span>
+        <span>SPECIMEN / MODEL ONLY — NOT AN OFFICIAL UNIVERSITY DOCUMENT</span>
+      </div>
+      <h1 class="app-title">3D DEGREE CERTIFICATE VIEWER</h1>
+      <p class="app-subtitle">Interactive specimen presentation · Master of Computer Applications</p>
+    </header>
+
+    <!-- 3D Viewer Section -->
+    <section class="viewer-section" aria-label="Interactive 3D Certificate Display">
+      <div class="interaction-surface" id="interactionSurface" title="Drag with mouse or touch to rotate 3D certificate">
+        <div class="responsive-scaler" id="responsiveScaler">
+          <div class="scene-3d">
+            <!-- 3D Card Object -->
+            <div id="certificate3d" class="ambient-floating" role="img" aria-label="Specimen Degree Certificate for Sarang R N, Master of Computer Applications">
+              
+              <!-- FRONT FACE -->
+              <div class="certificate-face face-parchment cert-front">
+                <div class="cert-border-outer"></div>
+                <div class="cert-border-inner"></div>
+
+                <!-- Corner Ornaments (Pure CSS) -->
+                <div class="corner-ornament corner-tl" aria-hidden="true"><div class="corner-diamond"></div></div>
+                <div class="corner-ornament corner-tr" aria-hidden="true"><div class="corner-diamond"></div></div>
+                <div class="corner-ornament corner-bl" aria-hidden="true"><div class="corner-diamond"></div></div>
+                <div class="corner-ornament corner-br" aria-hidden="true"><div class="corner-diamond"></div></div>
+
+                <!-- Front Certificate Body Content -->
+                <div class="cert-body">
+                  <!-- Prominent Top Specimen Notice -->
+                  <div class="top-disclaimer">SPECIMEN / MODEL ONLY</div>
+
+                  <!-- University Header -->
+                  <div class="univ-header">
+                    <h2 class="univ-name">COCHIN UNIVERSITY OF SCIENCE AND TECHNOLOGY</h2>
+                    <div class="univ-location">KOCHI – 682 022, KERALA</div>
+                  </div>
+
+                  <!-- Neutral Academic Emblem (Specimen / Demo Motif) -->
+                  <div class="emblem-wrapper" aria-hidden="true">
+                    <svg class="specimen-emblem" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <!-- Outer Ornate Ring -->
+                      <circle cx="50" cy="50" r="46" stroke="#b88f3a" stroke-width="2" stroke-dasharray="3 2" />
+                      <circle cx="50" cy="50" r="42" stroke="#9d7731" stroke-width="1.5" />
+                      <circle cx="50" cy="50" r="34" fill="#faf5e6" stroke="#b88f3a" stroke-width="1.2" />
+                      
+                      <!-- Laurel Wreath Motif -->
+                      <path d="M22 56C21 44 26 32 38 25C37 32 39 39 44 44C38 43 32 46 29 51C26 53 24 55 22 56Z" fill="#b88f3a" opacity="0.6"/>
+                      <path d="M78 56C79 44 74 32 62 25C63 32 61 39 56 44C62 43 68 46 71 51C74 53 76 55 78 56Z" fill="#b88f3a" opacity="0.6"/>
+                      
+                      <!-- Central Shield / Banner -->
+                      <path d="M38 36H62V54C62 61 50 67 50 67C50 67 38 61 38 54V36Z" fill="#b88f3a" />
+                      <polygon points="50,22 53,30 61,30 55,35 57,43 50,38 43,43 45,35 39,30 47,30" fill="#dfb351"/>
+                      
+                      <!-- SPECIMEN Text inside emblem -->
+                      <text x="50" y="52" text-anchor="middle" fill="#ffffff" font-family="'Cinzel', serif" font-size="7" font-weight="900" letter-spacing="0.8">SPECIMEN</text>
+                    </svg>
+                  </div>
+
+                  <!-- Degree Heading -->
+                  <div>
+                    <h3 class="cert-heading">DEGREE CERTIFICATE</h3>
+                    <div class="degree-name">MASTER OF COMPUTER APPLICATIONS</div>
+                    <div class="degree-abbrev">(MCA)</div>
+                  </div>
+
+                  <!-- Certification Statement Flow -->
+                  <div class="cert-statement">
+                    <div class="text-certify">This is to certify that</div>
+                    <div class="candidate-name">SARANG R N</div>
+                    <div class="reg-line">Register Number: 24100218</div>
+                    <div class="text-passage">
+                      has successfully completed the prescribed course of study and has passed the
+                      <span class="highlight-exam">MASTER OF COMPUTER APPLICATIONS<br>EXAMINATIONS, APRIL 2026</span>
+                      and has thereby qualified for the award of the degree of
+                      <span class="highlight-qualification">MASTER OF COMPUTER APPLICATIONS</span>
+                    </div>
+                    <div class="result-class">FIRST CLASS</div>
+                  </div>
+
+                  <!-- Bottom Signatory and Place Row -->
+                  <div class="cert-footer">
+                    <div class="footer-col-left">
+                      <div><strong>Place:</strong> Kochi – 682 022</div>
+                      <div><strong>Date:</strong> 05-06-2026</div>
+                    </div>
+
+                    <div class="footer-col-center">
+                      <div class="banner-not-official">SPECIMEN / MODEL — NOT AN OFFICIAL DEGREE CERTIFICATE</div>
+                    </div>
+
+                    <div class="footer-col-right">
+                      <div class="sign-placeholder">[ AUTHORIZED SIGNATORY — PLACEHOLDER ]</div>
+                      <div class="sign-title">CONTROLLER OF EXAMINATIONS</div>
+                      <div class="sign-label">(SPECIMEN LABEL)</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BACK FACE -->
+              <div class="certificate-face face-parchment cert-back">
+                <div class="back-watermark-bg" aria-hidden="true"></div>
+                <div class="cert-border-outer"></div>
+                <div class="cert-border-inner"></div>
+
+                <div class="corner-ornament corner-tl" aria-hidden="true"><div class="corner-diamond"></div></div>
+                <div class="corner-ornament corner-tr" aria-hidden="true"><div class="corner-diamond"></div></div>
+                <div class="corner-ornament corner-bl" aria-hidden="true"><div class="corner-diamond"></div></div>
+                <div class="corner-ornament corner-br" aria-hidden="true"><div class="corner-diamond"></div></div>
+
+                <div class="cert-body">
+                  <div>
+                    <div class="back-heading">SPECIMEN BACK SIDE</div>
+                    <div class="back-degree-title">MASTER OF COMPUTER APPLICATIONS</div>
+                  </div>
+
+                  <!-- Structured Record Grid -->
+                  <table class="back-record-table">
+                    <tbody>
+                      <tr>
+                        <td class="col-label">Student:</td>
+                        <td class="col-val">SARANG R N</td>
+                      </tr>
+                      <tr>
+                        <td class="col-label">Register Number:</td>
+                        <td class="col-val">24100218</td>
+                      </tr>
+                      <tr>
+                        <td class="col-label">Examination:</td>
+                        <td class="col-val">APRIL 2026</td>
+                      </tr>
+                      <tr>
+                        <td class="col-label">Classification:</td>
+                        <td class="col-val">FIRST CLASS</td>
+                      </tr>
+                      <tr>
+                        <td class="col-label">Reference:</td>
+                        <td class="col-val">Provisional Certificate Folio No. PC252423053</td>
+                      </tr>
+                      <tr>
+                        <td class="col-label">Provisional Certificate Date:</td>
+                        <td class="col-val">05-06-2026</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <!-- Large Boxed Mandatory Disclaimer -->
+                  <div class="back-warning-box">
+                    <div class="warn-title">THIS IS A DEMONSTRATION MODEL.</div>
+                    <div class="warn-desc">
+                      NOT VALID FOR ACADEMIC, EMPLOYMENT, LEGAL, GOVERNMENT OR VERIFICATION PURPOSES.
+                    </div>
+                  </div>
+
+                  <!-- Absence of Official Signatures/Seals Confirmation -->
+                  <div class="back-security-notice">
+                    No signature · No official seal · No QR code · No barcode · No verification URL
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3D Side Thickness Edges -->
+              <div class="edge edge-top" aria-hidden="true"></div>
+              <div class="edge edge-bottom" aria-hidden="true"></div>
+              <div class="edge edge-left" aria-hidden="true"></div>
+              <div class="edge edge-right" aria-hidden="true"></div>
+
+            </div>
+          </div>
+          <!-- Floor Shadow beneath certificate -->
+          <div class="floor-shadow" id="floorShadow" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Floating Controls Panel -->
+    <section class="controls-section" aria-label="Viewer Controls">
+      <div class="control-status-row">
+        <span class="status-tag">
+          <span class="indicator-light" aria-hidden="true"></span>
+          <span>3D VIEW</span>
+        </span>
+        <span class="status-tag" id="autoRotateStatusTag">
+          <span class="indicator-light off" id="autoRotateLed" aria-hidden="true"></span>
+          <span id="autoRotateLabel">AUTO ROTATION: OFF</span>
+        </span>
+        <span class="status-tag" id="orientationReadout" aria-live="polite">
+          Y: 0° | X: 0° | 100%
+        </span>
+      </div>
+
+      <div class="controls-toolbar" role="toolbar" aria-label="3D Certificate Rotation and Zoom Controls">
+        <button type="button" class="btn-ctrl" id="btnRotateLeft" aria-label="Rotate certificate left by 30 degrees">
+          <span aria-hidden="true">⟲</span> Rotate Left
+        </button>
+
+        <button type="button" class="btn-ctrl" id="btnRotateRight" aria-label="Rotate certificate right by 30 degrees">
+          <span aria-hidden="true">⟳</span> Rotate Right
+        </button>
+
+        <button type="button" class="btn-ctrl" id="btnFlipBack" aria-label="Flip certificate to view reverse or front side">
+          <span aria-hidden="true">⇄</span> Flip Side
+        </button>
+
+        <div class="toolbar-divider" aria-hidden="true"></div>
+
+        <button type="button" class="btn-ctrl" id="btnAutoRotate" aria-label="Toggle continuous automatic rotation" aria-pressed="false">
+          <span id="autoRotateIcon" aria-hidden="true">▶</span>
+          <span id="autoRotateBtnText">Auto Rotate</span>
+        </button>
+
+        <button type="button" class="btn-ctrl" id="btnResetView" aria-label="Reset certificate view to original center position">
+          <span aria-hidden="true">↺</span> Reset
+        </button>
+
+        <div class="toolbar-divider" aria-hidden="true"></div>
+
+        <button type="button" class="btn-ctrl" id="btnZoomIn" aria-label="Zoom in certificate">
+          <span aria-hidden="true">＋</span> Zoom In
+        </button>
+
+        <button type="button" class="btn-ctrl" id="btnZoomOut" aria-label="Zoom out certificate">
+          <span aria-hidden="true">−</span> Zoom Out
+        </button>
+      </div>
+
+      <div class="gesture-hint">
+        <span aria-hidden="true">🖱️</span>
+        <span>Drag to rotate 3D card · Arrow keys to tilt/turn · Space to auto-rotate · R to reset</span>
+      </div>
+    </section>
+
+    <!-- Student / Certificate Information Details Panel -->
+    <section class="details-section" aria-labelledby="detailsPanelHeading">
+      <h2 id="detailsPanelHeading" class="details-title">
+        <span aria-hidden="true">📜</span>
+        <span>SPECIMEN RECORD SUMMARY</span>
+      </h2>
+      
+      <div class="details-grid">
+        <div class="detail-item">
+          <span class="detail-label">Degree</span>
+          <span class="detail-val">Master of Computer Applications (MCA)</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Student Name</span>
+          <span class="detail-val">Sarang R N</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Register Number</span>
+          <span class="detail-val">24100218</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Examination</span>
+          <span class="detail-val">April 2026</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Classification</span>
+          <span class="detail-val">First Class</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Document Status</span>
+          <span class="detail-val status-pill">SPECIMEN / DEMONSTRATION ONLY</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Vanilla JavaScript Interactive Engine -->
+  <script>
+    (function () {
+      'use strict';
+
+      // ==================================================
+      // CORE STATE VARIABLES
+      // ==================================================
+      let rotationX = 0; // Vertical tilt (deg)
+      let rotationY = 0; // Horizontal turn (deg)
+      let scale = 1.0;   // Zoom level
+      let autoRotate = false;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let lastX = 0;
+      let lastY = 0;
+      let animFrameId = null;
+
+      // DOM Elements
+      const card = document.getElementById('certificate3d');
+      const floorShadow = document.getElementById('floorShadow');
+      const surface = document.getElementById('interactionSurface');
+      const scaler = document.getElementById('responsiveScaler');
+      const autoRotateBtn = document.getElementById('btnAutoRotate');
+      const autoRotateIcon = document.getElementById('autoRotateIcon');
+      const autoRotateBtnText = document.getElementById('autoRotateBtnText');
+      const autoRotateLabel = document.getElementById('autoRotateLabel');
+      const autoRotateLed = document.getElementById('autoRotateLed');
+      const orientationReadout = document.getElementById('orientationReadout');
+
+      const btnRotateLeft = document.getElementById('btnRotateLeft');
+      const btnRotateRight = document.getElementById('btnRotateRight');
+      const btnFlipBack = document.getElementById('btnFlipBack');
+      const btnResetView = document.getElementById('btnResetView');
+      const btnZoomIn = document.getElementById('btnZoomIn');
+      const btnZoomOut = document.getElementById('btnZoomOut');
+
+      // Check user reduced motion preference
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // ==================================================
+      // RESPONSIVE RESCALE FUNCTION
+      // ==================================================
+      function updateViewportScale() {
+        const availableWidth = window.innerWidth - 32;
+        const targetWidth = 820;
+        let baseScale = 1;
+
+        if (availableWidth < targetWidth) {
+          baseScale = Math.max(0.38, availableWidth / targetWidth);
+        }
+
+        scaler.style.transform = `scale(${baseScale})`;
+        // Adjust container height so layout doesn't create excessive empty space
+        scaler.parentElement.style.height = `${560 * baseScale + 20}px`;
+      }
+
+      window.addEventListener('resize', updateViewportScale, { passive: true });
+      updateViewportScale();
+
+      // ==================================================
+      // 3D TRANSFORM APPLIER
+      // ==================================================
+      function applyTransforms() {
+        // Clamp X tilt between -65 and +65 deg
+        if (rotationX > 65) rotationX = 65;
+        if (rotationX < -65) rotationX = -65;
+
+        // Apply 3D rotation & user scale
+        card.style.transform = `rotateX(${rotationX.toFixed(2)}deg) rotateY(${rotationY.toFixed(2)}deg) scale(${scale.toFixed(2)})`;
+
+        // Update Floor Shadow to dynamically reflect tilt and turn
+        const shadowTilt = 82 + (rotationX * 0.15);
+        const shadowOpacity = Math.max(0.2, 0.75 - Math.abs(rotationX) * 0.005);
+        floorShadow.style.transform = `translateX(-50%) rotateX(${shadowTilt}deg) rotateZ(${-rotationY * 0.1}deg)`;
+        floorShadow.style.opacity = shadowOpacity;
+
+        // Readout display
+        const normY = Math.round(((rotationY % 360) + 360) % 360);
+        const normX = Math.round(rotationX);
+        const normZoom = Math.round(scale * 100);
+        orientationReadout.textContent = `Y: ${normY}° | X: ${normX}° | ${normZoom}%`;
+      }
+
+      // ==================================================
+      // AUTO ROTATE LOOP
+      // ==================================================
+      function loop() {
+        if (autoRotate && !isDragging && !prefersReducedMotion) {
+          rotationY += 0.45;
+          applyTransforms();
+        }
+        animFrameId = requestAnimationFrame(loop);
+      }
+
+      function setAutoRotate(enabled) {
+        autoRotate = enabled;
+        if (autoRotate) {
+          card.classList.remove('ambient-floating');
+          autoRotateBtn.classList.add('active-mode');
+          autoRotateBtn.setAttribute('aria-pressed', 'true');
+          autoRotateIcon.textContent = '⏸';
+          autoRotateBtnText.textContent = 'Pause Auto';
+          autoRotateLabel.textContent = 'AUTO ROTATION: ON';
+          autoRotateLed.classList.remove('off');
+        } else {
+          autoRotateBtn.classList.remove('active-mode');
+          autoRotateBtn.setAttribute('aria-pressed', 'false');
+          autoRotateIcon.textContent = '▶';
+          autoRotateBtnText.textContent = 'Auto Rotate';
+          autoRotateLabel.textContent = 'AUTO ROTATION: OFF';
+          autoRotateLed.classList.add('off');
+        }
+      }
+
+      // ==================================================
+      // INTERACTION HANDLERS (MOUSE & TOUCH)
+      // ==================================================
+      function handleDragStart(clientX, clientY) {
+        isDragging = true;
+        startX = clientX;
+        startY = clientY;
+        lastX = clientX;
+        lastY = clientY;
+        card.classList.remove('ambient-floating');
+      }
+
+      function handleDragMove(clientX, clientY) {
+        if (!isDragging) return;
+        const deltaX = clientX - lastX;
+        const deltaY = clientY - lastY;
+        lastX = clientX;
+        lastY = clientY;
+
+        rotationY += deltaX * 0.45;
+        rotationX -= deltaY * 0.45;
+
+        applyTransforms();
+      }
+
+      function handleDragEnd() {
+        isDragging = false;
+      }
+
+      // Mouse events
+      surface.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return; // Left click only
+        handleDragStart(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mousemove', function (e) {
+        handleDragMove(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mouseup', handleDragEnd);
+
+      // Touch events (Mobile friendly with smooth one-finger rotation)
+      surface.addEventListener('touchstart', function (e) {
+        if (e.touches.length === 1) {
+          handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', function (e) {
+        if (isDragging && e.touches.length === 1) {
+          handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
+          // If dragging card, prevent pull-to-refresh or window scroll
+          if (e.cancelable) {
+            e.preventDefault();
+          }
+        }
+      }, { passive: false });
+
+      window.addEventListener('touchend', handleDragEnd);
+      window.addEventListener('touchcancel', handleDragEnd);
+
+      // Mouse Wheel Zoom
+      surface.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.05 : 0.05;
+        scale = Math.min(1.4, Math.max(0.65, scale + delta));
+        applyTransforms();
+      }, { passive: false });
+
+      // ==================================================
+      // BUTTON CONTROLS
+      // ==================================================
+      btnRotateLeft.addEventListener('click', function () {
+        card.classList.remove('ambient-floating');
+        rotationY -= 30;
+        applyTransforms();
+      });
+
+      btnRotateRight.addEventListener('click', function () {
+        card.classList.remove('ambient-floating');
+        rotationY += 30;
+        applyTransforms();
+      });
+
+      btnFlipBack.addEventListener('click', function () {
+        card.classList.remove('ambient-floating');
+        // Round to nearest 180 deg
+        const remainder = Math.abs(rotationY % 360);
+        if (remainder > 90 && remainder < 270) {
+          // It's currently near back, flip to front
+          rotationY = Math.round(rotationY / 360) * 360;
+        } else {
+          // Flip to back
+          rotationY = Math.round(rotationY / 360) * 360 + 180;
+        }
+        rotationX = 0;
+        applyTransforms();
+      });
+
+      btnAutoRotate.addEventListener('click', function () {
+        setAutoRotate(!autoRotate);
+      });
+
+      btnResetView.addEventListener('click', function () {
+        card.classList.remove('ambient-floating');
+        rotationX = 0;
+        rotationY = 0;
+        scale = 1.0;
+        setAutoRotate(false);
+        applyTransforms();
+      });
+
+      btnZoomIn.addEventListener('click', function () {
+        scale = Math.min(1.4, scale + 0.1);
+        applyTransforms();
+      });
+
+      btnZoomOut.addEventListener('click', function () {
+        scale = Math.max(0.65, scale - 0.1);
+        applyTransforms();
+      });
+
+      // ==================================================
+      // KEYBOARD NAVIGATION
+      // ==================================================
+      window.addEventListener('keydown', function (e) {
+        // Avoid handling when typing in potential inputs
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+          return;
+        }
+
+        switch (e.key) {
+          case 'ArrowLeft':
+            card.classList.remove('ambient-floating');
+            rotationY -= 15;
+            applyTransforms();
+            e.preventDefault();
+            break;
+          case 'ArrowRight':
+            card.classList.remove('ambient-floating');
+            rotationY += 15;
+            applyTransforms();
+            e.preventDefault();
+            break;
+          case 'ArrowUp':
+            card.classList.remove('ambient-floating');
+            rotationX += 8;
+            applyTransforms();
+            e.preventDefault();
+            break;
+          case 'ArrowDown':
+            card.classList.remove('ambient-floating');
+            rotationX -= 8;
+            applyTransforms();
+            e.preventDefault();
+            break;
+          case 'r':
+          case 'R':
+            btnResetView.click();
+            e.preventDefault();
+            break;
+          case ' ':
+            setAutoRotate(!autoRotate);
+            e.preventDefault();
+            break;
+          case '+':
+          case '=':
+            btnZoomIn.click();
+            e.preventDefault();
+            break;
+          case '-':
+          case '_':
+            btnZoomOut.click();
+            e.preventDefault();
+            break;
+        }
+      });
+
+      // Initial Setup
+      applyTransforms();
+      animFrameId = requestAnimationFrame(loop);
+
+    })();
+  </script>
+</body>
+</html>
